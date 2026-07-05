@@ -1,0 +1,171 @@
+{
+  "description": "Golden dataset for the TributeFlow review agent. Each case gives the agent one candidate entry plus a set of already-published entries, and labels whether the candidate should be flagged (duplicate or wrong wall). Clean cases test that the agent does NOT over-flag.",
+  "cases": [
+    {
+      "id": "dup-exact",
+      "category": "duplicate",
+      "should_flag": true,
+      "notes": "Identical entry already published.",
+      "existing": [
+        {"wall": "pets", "row": 2, "tribute_name": "Bella", "donor_name": "The Smith Family", "message": "Forever in our hearts."}
+      ],
+      "candidate": {"wall": "pets", "row": 40, "tribute_name": "Bella", "donor_name": "The Smith Family", "message": "Forever in our hearts."}
+    },
+    {
+      "id": "dup-parenthetical",
+      "category": "duplicate",
+      "should_flag": true,
+      "notes": "Same pet, donor folded into the tribute name.",
+      "existing": [
+        {"wall": "pets", "row": 2, "tribute_name": "Bella", "donor_name": "The Smith Family", "message": ""}
+      ],
+      "candidate": {"wall": "pets", "row": 41, "tribute_name": "Bella (Smith Family)", "donor_name": "", "message": ""}
+    },
+    {
+      "id": "dup-surname-merged",
+      "category": "duplicate",
+      "should_flag": true,
+      "notes": "Family surname appended to the pet's name.",
+      "existing": [
+        {"wall": "pets", "row": 3, "tribute_name": "Bella", "donor_name": "The Smith Family", "message": "Our sweet girl."}
+      ],
+      "candidate": {"wall": "pets", "row": 42, "tribute_name": "Bella Smith", "donor_name": "Smith Family", "message": ""}
+    },
+    {
+      "id": "dup-nickname",
+      "category": "duplicate",
+      "should_flag": true,
+      "notes": "Nickname vs full name, same donor.",
+      "existing": [
+        {"wall": "pets", "row": 4, "tribute_name": "Samuel", "donor_name": "Priya Raman", "message": "Best boy Sammy."}
+      ],
+      "candidate": {"wall": "pets", "row": 43, "tribute_name": "Sammy", "donor_name": "Priya Raman", "message": ""}
+    },
+    {
+      "id": "dup-title-and-initial",
+      "category": "duplicate",
+      "should_flag": true,
+      "notes": "Person duplicate with honorific and middle initial added.",
+      "existing": [
+        {"wall": "people", "row": 2, "tribute_name": "John Smith", "donor_name": "The Smith Children", "message": "A life devoted to animals."}
+      ],
+      "candidate": {"wall": "people", "row": 44, "tribute_name": "Dr. John A. Smith", "donor_name": "His Children", "message": "A life devoted to animals."}
+    },
+    {
+      "id": "dup-typo",
+      "category": "duplicate",
+      "should_flag": true,
+      "notes": "Misspelled resubmission of an existing entry.",
+      "existing": [
+        {"wall": "pets", "row": 5, "tribute_name": "Whiskers", "donor_name": "Dana Lopez", "message": "Sunbeams forever."}
+      ],
+      "candidate": {"wall": "pets", "row": 45, "tribute_name": "Whiskrs", "donor_name": "Dana Lopez", "message": "Sunbeams forever."}
+    },
+    {
+      "id": "dup-within-batch-context",
+      "category": "duplicate",
+      "should_flag": true,
+      "notes": "Duplicate of an entry that is also new this batch (marked under_review in search results).",
+      "existing": [
+        {"wall": "pets", "row": 46, "tribute_name": "Luna", "donor_name": "The Ferris Family", "message": ""}
+      ],
+      "candidate": {"wall": "pets", "row": 47, "tribute_name": "Luna Ferris", "donor_name": "Ferris Family", "message": ""}
+    },
+    {
+      "id": "clean-common-pet-name",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "Two different pets named Bella from unrelated donors — must NOT flag.",
+      "existing": [
+        {"wall": "pets", "row": 2, "tribute_name": "Bella", "donor_name": "The Smith Family", "message": "Our golden retriever."}
+      ],
+      "candidate": {"wall": "pets", "row": 48, "tribute_name": "Bella", "donor_name": "Marcus Webb", "message": "The sweetest tabby cat."}
+    },
+    {
+      "id": "clean-same-donor-two-pets",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "One donor honoring a second, different pet.",
+      "existing": [
+        {"wall": "pets", "row": 6, "tribute_name": "Rex", "donor_name": "The Nguyen Family", "message": ""}
+      ],
+      "candidate": {"wall": "pets", "row": 49, "tribute_name": "Daisy", "donor_name": "The Nguyen Family", "message": ""}
+    },
+    {
+      "id": "clean-empty-wall",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "First entry ever — nothing to duplicate.",
+      "existing": [],
+      "candidate": {"wall": "pets", "row": 2, "tribute_name": "Mochi", "donor_name": "Alex Kim", "message": ""}
+    },
+    {
+      "id": "clean-similar-not-same",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "Max vs Maxine, different donors — similar strings, different pets.",
+      "existing": [
+        {"wall": "pets", "row": 7, "tribute_name": "Max", "donor_name": "Jordan Bell", "message": ""}
+      ],
+      "candidate": {"wall": "pets", "row": 50, "tribute_name": "Maxine", "donor_name": "Carol Danvers", "message": ""}
+    },
+    {
+      "id": "clean-cross-wall-same-name",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "A person named Charlie and a pet named Charlie are different tributes.",
+      "existing": [
+        {"wall": "pets", "row": 8, "tribute_name": "Charlie", "donor_name": "The Owens Family", "message": "Best beagle ever."}
+      ],
+      "candidate": {"wall": "people", "row": 51, "tribute_name": "Charlie Hendricks", "donor_name": "Rotary Club of Charlottesville", "message": "Longtime shelter volunteer and friend."}
+    },
+    {
+      "id": "wall-human-on-pets",
+      "category": "wall_mismatch",
+      "should_flag": true,
+      "notes": "Clearly a human memorial placed on the pets wall.",
+      "existing": [],
+      "candidate": {"wall": "pets", "row": 52, "tribute_name": "Rose Delgado", "donor_name": "Her Grandchildren", "message": "In loving memory of our grandmother, who taught us to love every stray."}
+    },
+    {
+      "id": "wall-pet-on-people",
+      "category": "wall_mismatch",
+      "should_flag": true,
+      "notes": "Clearly a pet placed on the people wall.",
+      "existing": [],
+      "candidate": {"wall": "people", "row": 53, "tribute_name": "Rex", "donor_name": "The Tran Family", "message": "The best German Shepherd a family could ask for. 14 wonderful years of fetch."}
+    },
+    {
+      "id": "wall-pet-on-people-subtle",
+      "category": "wall_mismatch",
+      "should_flag": true,
+      "notes": "Human-sounding name but the message reveals a pet, on the people wall.",
+      "existing": [],
+      "candidate": {"wall": "people", "row": 54, "tribute_name": "Oliver", "donor_name": "Grace Park", "message": "Fifteen years of purrs and headbutts. Sleep well, sweet boy."}
+    },
+    {
+      "id": "clean-human-name-pet-wall",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "Pets often have human names; no message, no evidence of mismatch — must NOT flag.",
+      "existing": [],
+      "candidate": {"wall": "pets", "row": 55, "tribute_name": "Oliver", "donor_name": "Grace Park", "message": ""}
+    },
+    {
+      "id": "clean-ambiguous-people-wall",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "Ambiguous single name on people wall with no message — not clear enough to flag.",
+      "existing": [],
+      "candidate": {"wall": "people", "row": 56, "tribute_name": "Sunny", "donor_name": "The Alvarez Family", "message": ""}
+    },
+    {
+      "id": "clean-person-with-context",
+      "category": "clean",
+      "should_flag": false,
+      "notes": "Obvious human memorial correctly on the people wall.",
+      "existing": [],
+      "candidate": {"wall": "people", "row": 57, "tribute_name": "Margaret \"Peggy\" O'Neill", "donor_name": "Friends at First Presbyterian", "message": "She fostered over 60 kittens in her retirement."}
+    }
+  ]
+}

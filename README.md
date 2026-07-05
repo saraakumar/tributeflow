@@ -76,6 +76,23 @@ State lives in `state/published.json` (committed back by the Action after each
 run). Deleting it is safe: the next run re-reports everything as "new" but
 publishes identical data.
 
+## Agent evals
+
+The judgment calls the agent makes (fuzzy duplicates, pet/people wall checks)
+are measured, not assumed. `evals/golden.json` holds labeled cases — including
+adversarial ones like two different pets named Bella (must NOT flag) and a cat
+named Oliver whose message reveals it's on the wrong wall (must flag).
+
+```sh
+export ANTHROPIC_API_KEY=sk-ant-...
+tributeflow-eval           # runs every case, prints precision/recall/F1
+```
+
+Results land in `evals/results.json`. The `eval.yml` workflow re-runs the
+suite on any PR that touches `agent.py` or the dataset, so prompt changes
+can't silently regress dedup quality. The scorer itself is unit-tested
+offline (`tests/test_evals.py`).
+
 ## Tests & CI
 
 `ci.yml` runs `ruff` + `pytest` on every push/PR. Tests cover sheet parsing,

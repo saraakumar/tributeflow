@@ -16,6 +16,7 @@ dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.scripts]
 tributeflow = "tributeflow.main:cli"
+tributeflow-eval = "tributeflow.evals:cli"
 
 [build-system]
 requires = ["setuptools>=68"]
