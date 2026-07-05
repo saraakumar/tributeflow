@@ -25,9 +25,23 @@ from .publisher import GitHubPublisher
 log = logging.getLogger("tributeflow")
 
 
-def run(cfg: Config, dry_run: bool = False) -> RunReport:
-    entries = sheets.fetch_entries(cfg)
-    log.info("total entries in sheet: %d", len(entries))
+def load_fixture(path: str, cfg: Config) -> list:
+    """Load entries from a local JSON fixture instead of Google Sheets (demo mode)."""
+    import json
+    raw = json.loads(open(path).read())
+    entries = []
+    for wall, values in raw.items():
+        entries.extend(sheets.rows_to_entries(wall, values, cfg.columns))
+    return entries
+
+
+def run(cfg: Config, dry_run: bool = False, fixture: str | None = None) -> RunReport:
+    if fixture:
+        entries = load_fixture(fixture, cfg)
+        log.info("loaded %d entries from fixture %s", len(entries), fixture)
+    else:
+        entries = sheets.fetch_entries(cfg)
+        log.info("total entries in sheet: %d", len(entries))
 
     previous = state.load_state(cfg.state_path)
     diff = state.diff_entries(entries, previous)
@@ -108,6 +122,8 @@ def cli() -> None:
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument("--dry-run", action="store_true",
                         help="Run all checks but don't commit or email.")
+    parser.add_argument("--fixture", default=None,
+                        help="Load entries from a local JSON file instead of Google Sheets.")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -118,7 +134,7 @@ def cli() -> None:
 
     cfg = load_config(args.config)
     try:
-        report = run(cfg, dry_run=args.dry_run)
+        report = run(cfg, dry_run=args.dry_run, fixture=args.fixture)
     except Exception:
         log.exception("run failed before publishing — the wall was not modified")
         sys.exit(1)

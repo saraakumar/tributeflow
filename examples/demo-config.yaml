@@ -1,0 +1,22 @@
+# Demo configuration — used with --fixture, so no Google Sheet, GitHub repo,
+# or credentials are needed. Run:
+#   tributeflow --config examples/demo-config.yaml --fixture examples/sample_sheet.json --dry-run
+sheet_id: "demo"
+
+walls:
+  pets:
+    tab: "Pet Tribute Wall"
+  people:
+    tab: "People Tribute Wall"
+
+columns:
+  tribute_name: "Tribute Name"
+  donor_name: "Donor Name"
+  message: "Message"
+  image_url: "Image URL"
+
+website:
+  repo: "example/website"
+  data_dir: "data/tributes"
+
+state_path: "examples/.demo-state.json"

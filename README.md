@@ -1,5 +1,19 @@
 # TributeFlow
 
+[![CI](https://github.com/saraakumar/tributeflow/actions/workflows/ci.yml/badge.svg)](https://github.com/saraakumar/tributeflow/actions/workflows/ci.yml)
+
+**Try it in 30 seconds, no credentials needed:**
+
+```sh
+pip install -e . && tributeflow --config examples/demo-config.yaml \
+  --fixture examples/sample_sheet.json --dry-run --verbose
+```
+
+This runs the full pipeline on sample data: you'll see validation hold back a
+row with a missing donor name, a pasted Google Drive link get converted to a
+thumbnail URL (and flagged as broken, since it's fake), and the summary email
+that would have been sent.
+
 Agentic one-click publishing for the CASPCA tribute walls. Staff edit a Google
 Sheet and click **Publish to Wall**; TributeFlow validates every entry, uses a
 Claude agent to catch duplicates and wall mix-ups, commits the data to the
