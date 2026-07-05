@@ -16,14 +16,14 @@ columns:
   image_url: "Image URL"
 
 website:
-  repo: "caspca/website"          # owner/name of the site's GitHub repo
+  repo: "your-org/website"        # owner/name of the site's GitHub repo
   branch: "main"
   data_dir: "data/tributes"       # where pets.json / people.json are written
 
 email:
   sender: "tributeflow@example.org"
   recipients:
-    - "marketing@caspca.org"
+    - "marketing@example.org"
 
 model: "claude-opus-4-8"
 state_path: "state/published.json"
