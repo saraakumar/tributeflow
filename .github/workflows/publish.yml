@@ -1,0 +1,48 @@
+name: Publish tribute wall
+
+on:
+  repository_dispatch:
+    types: [publish]          # fired by the "Publish to Wall" button in the Google Sheet
+  workflow_dispatch: {}       # manual runs from the Actions tab
+  # To switch to an automatic schedule later, uncomment:
+  # schedule:
+  #   - cron: "0 14 * * 1-5"  # weekdays 9am ET
+
+concurrency:
+  group: publish              # never run two publishes at once
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install .
+
+      - name: Publish
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.WEBSITE_REPO_TOKEN }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: tributeflow --config config.yaml
+
+      - name: Persist state
+        run: |
+          if ! git diff --quiet state/published.json 2>/dev/null; then
+            git config user.name "tributeflow-bot"
+            git config user.email "actions@github.com"
+            git add state/published.json
+            git commit -m "Update published state"
+            git push
+          fi

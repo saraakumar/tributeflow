@@ -1,0 +1,29 @@
+# Copy to config.yaml and fill in. Secrets go in environment variables, not here.
+sheet_id: "YOUR_GOOGLE_SHEET_ID"
+
+walls:
+  pets:
+    tab: "Pet Tribute Wall"      # exact tab name in the Google Sheet
+  people:
+    tab: "People Tribute Wall"
+
+# Map pipeline fields to the exact header text in row 1 of each tab.
+# tribute_name and donor_name are required; the others are optional.
+columns:
+  tribute_name: "Tribute Name"
+  donor_name: "Donor Name"
+  message: "Message"
+  image_url: "Image URL"
+
+website:
+  repo: "caspca/website"          # owner/name of the site's GitHub repo
+  branch: "main"
+  data_dir: "data/tributes"       # where pets.json / people.json are written
+
+email:
+  sender: "tributeflow@example.org"
+  recipients:
+    - "marketing@caspca.org"
+
+model: "claude-opus-4-8"
+state_path: "state/published.json"
