@@ -1,0 +1,35 @@
+# CASPCA production configuration. Secrets live in GitHub Actions secrets /
+# Apps Script properties — never in this file.
+sheet_id: "1rjTigzDzPojXlzp_BRW1Qoos1iW7G8MPuSzPqtVhXx0"
+
+walls:
+  pets:
+    tab: "Pet"
+    repo: "comms-caspca/Pet-Wall"
+    branch: "main"
+    csv_path: "Tribute.csv"
+    csv_header: "In Honor/Memory Of:,Tribute Name,Donor Name,Image URL"
+    columns:
+      tribute_type: "In Honor/Memory Of:"   # the Pet tab's header differs from People's
+  people:
+    tab: "People"
+    repo: "comms-caspca/Tribute-Wall"
+    branch: "main"
+    csv_path: "Tribute.csv"
+    csv_header: "In Honor or Memory Of:,Tribute Name,Donor Name,Image URL"
+
+columns:
+  tribute_type: "In Honor or Memory Of:"
+  tribute_name: "Tribute Name"
+  donor_name: "Donor Name"
+  image_url: "Image URL"
+
+# Recipients are read by the Apps Script emailer (RECIPIENTS script property
+# takes precedence); listed here for reference.
+email:
+  recipients:
+    - "development@caspca.org"
+    - "comms@caspca.org"
+
+state_path: "state/published.json"
+summary_path: "last_run_summary.json"

@@ -177,10 +177,13 @@ def fallback_email(report: RunReport) -> str:
         f"Published: {len(report.published_new)} new, {len(report.published_changed)} updated. "
         f"{report.unchanged_count} entries unchanged."
     )
-    for e in report.published_new:
-        lines.append(f"  NEW ({e.wall} wall): {e.tribute_name} — from {e.donor_name}")
-    for e in report.published_changed:
-        lines.append(f"  UPDATED ({e.wall} wall): {e.tribute_name} — from {e.donor_name}")
+    # The very first publish imports the whole sheet — don't email 700 lines.
+    max_listed = 25
+    for label, entries in (("NEW", report.published_new), ("UPDATED", report.published_changed)):
+        for e in entries[:max_listed]:
+            lines.append(f"  {label} ({e.wall} wall): {e.tribute_name} — from {e.donor_name}")
+        if len(entries) > max_listed:
+            lines.append(f"  ...and {len(entries) - max_listed} more {label.lower()} entries.")
     if report.consolidated:
         lines.append("")
         lines.append("Duplicates consolidated automatically (no action needed):")
