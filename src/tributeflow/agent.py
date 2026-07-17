@@ -26,10 +26,15 @@ REVIEW_SYSTEM = """You are the editorial reviewer for an animal shelter's memori
 
 For each entry under review:
 1. Use search_existing_entries to check whether it duplicates an entry that is already
-   published or another entry in this batch. Names may differ slightly ("Bella (Smith family)"
-   vs "Bella Smith") — use judgment, and search more than once with different terms if needed.
-2. Check the entry is on the right wall: pet names/messages on the pets wall, human memorials
-   on the people wall. Only flag a wall mismatch when the text makes it reasonably clear.
+   published or another entry in this batch. Exact matches (identical honoree and donor) are
+   already consolidated automatically before you see the batch — focus on near-matches, where
+   names differ slightly ("Bella (Smith family)" vs "Bella Smith"). Use judgment, and search
+   more than once with different terms if needed. Only flag a near-duplicate when BOTH the
+   honoree and the donor appear to be the same people.
+2. Check the entry is on the right wall: pet names on the pets wall, human memorials on the
+   people wall. Only flag a wall mismatch when the names make it reasonably clear (e.g. a
+   tribute name with a title like "Dr." or a full human first-and-last name on the pets wall,
+   or an obvious pet name like "Whiskers" on the people wall).
 
 Call flag_entry for every problem you find, with a short plain-English reason a nontechnical
 marketing person can act on. If an entry looks fine, do nothing for it. Do not flag entries
@@ -107,7 +112,7 @@ def review_entries(
             "row": e.row_number,
             "tribute_name": e.tribute_name,
             "donor_name": e.donor_name,
-            "message": e.message[:500],
+            "tribute_type": e.tribute_type,
             "has_image": bool(e.image_url),
         }
         for e in to_review
@@ -139,7 +144,9 @@ EMAIL_SYSTEM = """You write the publish-summary email for an animal shelter's ma
 They are not technical. Write warm, brief, plain English. Structure:
 1. One-sentence summary of the run.
 2. What was published (new entries first, then updates), listed by tribute name and wall.
-3. "Needs your attention" — each held-back entry with its sheet row number and how to fix it
+3. "Duplicates consolidated" — entries dropped automatically because another row has the same
+   honoree and donor. Reassure them nothing is required; they may delete the duplicate rows.
+4. "Needs your attention" — each held-back entry with its sheet row number and how to fix it
    in the Google Sheet. Reassure them it will publish automatically on the next run once fixed.
 Omit any section that is empty. No markdown syntax — plain text only. Do not invent entries
 or numbers that are not in the data."""
@@ -174,6 +181,11 @@ def fallback_email(report: RunReport) -> str:
         lines.append(f"  NEW ({e.wall} wall): {e.tribute_name} — from {e.donor_name}")
     for e in report.published_changed:
         lines.append(f"  UPDATED ({e.wall} wall): {e.tribute_name} — from {e.donor_name}")
+    if report.consolidated:
+        lines.append("")
+        lines.append("Duplicates consolidated automatically (no action needed):")
+        for i in report.consolidated:
+            lines.append(f"  Row {i.row_number} on the {i.wall} wall ({i.tribute_name}): {i.problem}")
     if report.issues:
         lines.append("")
         lines.append("Needs your attention (held back from publishing):")

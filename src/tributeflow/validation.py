@@ -40,14 +40,31 @@ def normalize_image_url(url: str, width: int = 400) -> str:
 
 
 def default_url_checker(url: str) -> bool:
-    """Return True if the URL responds successfully."""
-    try:
-        resp = requests.head(url, timeout=10, allow_redirects=True)
-        if resp.status_code == 405:  # some hosts reject HEAD
-            resp = requests.get(url, timeout=10, stream=True)
-        return resp.status_code < 400
-    except requests.RequestException:
-        return False
+    """Return True if the URL responds successfully.
+
+    Only a definitive client error (403/404/...) counts as broken. Rate limits
+    (429) and server errors get the benefit of the doubt — a transient blip
+    must never hold a tribute back from publishing.
+    """
+    import time
+
+    for attempt in range(2):
+        try:
+            resp = requests.head(url, timeout=10, allow_redirects=True)
+            if resp.status_code == 405:  # some hosts reject HEAD
+                resp = requests.get(url, timeout=10, stream=True)
+            if resp.status_code < 400 or resp.status_code == 429 or resp.status_code >= 500:
+                return True
+            if attempt == 0:
+                time.sleep(2)  # retry once before declaring it broken
+                continue
+            return False
+        except requests.RequestException:
+            if attempt == 0:
+                time.sleep(2)
+                continue
+            return False
+    return False
 
 
 def validate_entry(entry: Entry, url_checker=default_url_checker) -> list[Issue]:
@@ -69,16 +86,30 @@ def validate_entry(entry: Entry, url_checker=default_url_checker) -> list[Issue]
     if not entry.donor_name:
         issues.append(issue("This entry is missing a donor name."))
 
-    if entry.image_url:
-        entry.image_url = normalize_image_url(entry.image_url)
-        if not entry.image_url.lower().startswith(("http://", "https://")):
-            issues.append(issue(f"The image link doesn't look like a URL: {entry.image_url}"))
-        elif not url_checker(entry.image_url):
-            issues.append(
-                issue(
-                    f"The image link appears to be broken or not publicly viewable: "
-                    f"{entry.image_url}. If it's a Google Drive file, make sure sharing is "
-                    f"set to 'Anyone with the link'."
-                )
+    if not entry.tribute_type:
+        issues.append(issue('The first column is blank — it should say "In honor of" or "In memory of".'))
+    elif entry.tribute_type.strip().lower() not in ("in honor of", "in memory of"):
+        issues.append(
+            issue(
+                f'The first column says "{entry.tribute_type}" — it should be exactly '
+                f'"In honor of" or "In memory of".'
             )
+        )
+
+    if entry.image_url:
+        # A cell may hold several image URLs separated by ";" (the walls'
+        # multi-value convention), often with stray spaces or newlines.
+        urls = [normalize_image_url(u.strip()) for u in entry.image_url.split(";") if u.strip()]
+        entry.image_url = ";".join(urls)
+        for url in urls:
+            if not url.lower().startswith(("http://", "https://")):
+                issues.append(issue(f"The image link doesn't look like a URL: {url}"))
+            elif not url_checker(url):
+                issues.append(
+                    issue(
+                        f"The image link appears to be broken or not publicly viewable: "
+                        f"{url}. If it's a Google Drive file, make sure sharing is "
+                        f"set to 'Anyone with the link'."
+                    )
+                )
     return issues

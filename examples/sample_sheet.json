@@ -1,13 +1,13 @@
 {
   "pets": [
-    ["Tribute Name", "Donor Name", "Message", "Image URL"],
-    ["Bella", "The Smith Family", "Forever in our hearts, sweet girl.", ""],
-    ["Max", "Jordan Bell", "", ""],
-    ["Whiskers", "Dana Lopez", "Sunbeams forever.", "https://drive.google.com/file/d/1FakeDriveFileId123/view?usp=sharing"],
-    ["Luna", "", "We miss you every day.", ""]
+    ["In Honor/Memory Of:", "Tribute Name", "Donor Name", "Image URL"],
+    ["In memory of", "Bella", "The Smith Family", ""],
+    ["In honor of", "Max", "Jordan Bell", ""],
+    ["In memory of", "Whiskers", "Dana Lopez", "https://drive.google.com/file/d/1FakeDriveFileId123/view?usp=sharing"],
+    ["In memory of", "Luna", "", ""]
   ],
   "people": [
-    ["Tribute Name", "Donor Name", "Message", "Image URL"],
-    ["Margaret \"Peggy\" O'Neill", "Friends at First Presbyterian", "She fostered over 60 kittens in her retirement.", ""]
+    ["In Honor or Memory Of:", "Tribute Name", "Donor Name", "Image URL"],
+    ["In memory of", "Margaret \"Peggy\" O'Neill", "Friends at First Presbyterian", ""]
   ]
 }

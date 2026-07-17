@@ -13,7 +13,7 @@ def test_hash_is_stable():
 
 
 def test_hash_changes_when_content_changes():
-    assert make_entry().content_hash() != make_entry(message="We miss you").content_hash()
+    assert make_entry().content_hash() != make_entry(tribute_type="In honor of").content_hash()
 
 
 def test_diff_all_new_with_empty_state():

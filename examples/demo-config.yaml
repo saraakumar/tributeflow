@@ -5,18 +5,19 @@ sheet_id: "demo"
 
 walls:
   pets:
-    tab: "Pet Tribute Wall"
+    tab: "Pet"
+    csv_header: "In Honor/Memory Of:,Tribute Name,Donor Name,Image URL"
+    columns:
+      tribute_type: "In Honor/Memory Of:"
   people:
-    tab: "People Tribute Wall"
+    tab: "People"
+    csv_header: "In Honor or Memory Of:,Tribute Name,Donor Name,Image URL"
 
 columns:
+  tribute_type: "In Honor or Memory Of:"
   tribute_name: "Tribute Name"
   donor_name: "Donor Name"
-  message: "Message"
   image_url: "Image URL"
 
-website:
-  repo: "example/website"
-  data_dir: "data/tributes"
-
 state_path: "examples/.demo-state.json"
+summary_path: "examples/.demo-summary.json"

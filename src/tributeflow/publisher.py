@@ -1,14 +1,14 @@
-"""Publish tribute data to the website's GitHub repository.
+"""Publish tribute data to each wall's GitHub repository.
 
-Replaces the old manual flow (export CSV -> VS Code -> git push): we write one
-JSON file per wall via the GitHub Contents API. The site rebuilds from the
-commit exactly as it did before.
+Replaces the old manual flow (export CSV -> VS Code -> git push): we write the
+Tribute.csv each wall's site already renders, via the GitHub Contents API. The
+CSV format matches the existing app.js parser exactly (naive comma split,
+semicolons as multi-value separators), so the sites need no changes.
 """
 
 from __future__ import annotations
 
 import base64
-import json
 import logging
 
 import requests
@@ -21,17 +21,19 @@ log = logging.getLogger(__name__)
 
 API = "https://api.github.com"
 
+# Fallback header if a wall doesn't configure one (matches the People wall's file)
+DEFAULT_CSV_HEADER = "In Honor or Memory Of:,Tribute Name,Donor Name,Image URL"
 
-def build_wall_payloads(entries: list[Entry], walls: list[str]) -> dict[str, str]:
-    """Return {filename: file_content} for each wall, deterministic ordering."""
+
+def build_wall_payloads(entries: list[Entry], cfg: Config) -> dict[str, str]:
+    """Return {wall: csv_content} for each wall, deterministic ordering."""
     payloads = {}
-    for wall in walls:
+    for wall, wall_cfg in cfg.walls.items():
         wall_entries = [e for e in entries if e.wall == wall]
         wall_entries.sort(key=lambda e: e.row_number)
-        payloads[f"{wall}.json"] = (
-            json.dumps([e.to_public_dict() for e in wall_entries], indent=2, ensure_ascii=False)
-            + "\n"
-        )
+        header = wall_cfg.csv_header or DEFAULT_CSV_HEADER
+        rows = [header] + [e.to_csv_row() for e in wall_entries]
+        payloads[wall] = "\n".join(rows) + "\n"
     return payloads
 
 
@@ -48,47 +50,50 @@ class GitHubPublisher:
         )
 
     @with_retries(attempts=3, retry_on=(requests.RequestException,))
-    def _get_existing_sha(self, path: str) -> str | None:
-        url = f"{API}/repos/{self.cfg.website.repo}/contents/{path}"
-        resp = self.session.get(url, params={"ref": self.cfg.website.branch}, timeout=30)
+    def _get_existing(self, repo: str, branch: str, path: str) -> tuple[str, str] | None:
+        """Return (sha, decoded content) for a file, or None if it doesn't exist."""
+        url = f"{API}/repos/{repo}/contents/{path}"
+        resp = self.session.get(url, params={"ref": branch}, timeout=30)
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
-        return resp.json()["sha"]
+        data = resp.json()
+        content = base64.b64decode(data.get("content", "")).decode()
+        return data["sha"], content
 
     @with_retries(attempts=3, retry_on=(requests.RequestException,))
-    def _put_file(self, path: str, content: str, message: str) -> bool:
+    def _put_file(self, repo: str, branch: str, path: str, content: str, message: str) -> bool:
         """Create or update one file. Returns True if a commit was made."""
-        sha = self._get_existing_sha(path)
+        existing = self._get_existing(repo, branch, path)
         body = {
             "message": message,
             "content": base64.b64encode(content.encode()).decode(),
-            "branch": self.cfg.website.branch,
+            "branch": branch,
         }
-        if sha is not None:
-            # Skip the commit entirely if content is unchanged
-            current = self.session.get(
-                f"{API}/repos/{self.cfg.website.repo}/contents/{path}",
-                params={"ref": self.cfg.website.branch},
-                timeout=30,
-            ).json()
-            existing = base64.b64decode(current.get("content", "")).decode()
-            if existing == content:
-                log.info("%s unchanged, skipping commit", path)
+        if existing is not None:
+            sha, current = existing
+            if current == content:
+                log.info("%s/%s unchanged, skipping commit", repo, path)
                 return False
             body["sha"] = sha
-        url = f"{API}/repos/{self.cfg.website.repo}/contents/{path}"
+        url = f"{API}/repos/{repo}/contents/{path}"
         resp = self.session.put(url, json=body, timeout=30)
         resp.raise_for_status()
-        log.info("committed %s to %s@%s", path, self.cfg.website.repo, self.cfg.website.branch)
+        log.info("committed %s to %s@%s", path, repo, branch)
         return True
 
     def publish(self, entries: list[Entry], summary: str) -> list[str]:
-        """Write per-wall data files. Returns list of files that changed."""
-        payloads = build_wall_payloads(entries, list(self.cfg.walls.keys()))
+        """Write each wall's CSV to its repo. Returns list of files that changed."""
+        payloads = build_wall_payloads(entries, self.cfg)
         changed = []
-        for filename, content in payloads.items():
-            path = f"{self.cfg.website.data_dir}/{filename}"
-            if self._put_file(path, content, f"TributeFlow: {summary}"):
-                changed.append(path)
+        for wall, content in payloads.items():
+            wall_cfg = self.cfg.walls[wall]
+            if not wall_cfg.repo:
+                log.warning("wall '%s' has no repo configured — skipping", wall)
+                continue
+            if self._put_file(
+                wall_cfg.repo, wall_cfg.branch, wall_cfg.csv_path, content,
+                f"TributeFlow: {summary}",
+            ):
+                changed.append(f"{wall_cfg.repo}/{wall_cfg.csv_path}")
         return changed

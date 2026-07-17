@@ -53,7 +53,7 @@ def rows_to_entries(wall: str, values: list[list[str]], columns: dict[str, str])
                 row_number=i,
                 tribute_name=tribute,
                 donor_name=donor,
-                message=cell("message"),
+                tribute_type=cell("tribute_type"),
                 image_url=cell("image_url"),
             )
         )
@@ -72,7 +72,7 @@ def fetch_entries(cfg: Config) -> list[Entry]:
             .get(spreadsheetId=cfg.sheet_id, range=wall_cfg.tab)
             .execute()
         )
-        wall_entries = rows_to_entries(wall, result.get("values", []), cfg.columns)
+        wall_entries = rows_to_entries(wall, result.get("values", []), cfg.wall_columns(wall))
         log.info("fetched %d entries from tab '%s' (%s wall)", len(wall_entries), wall_cfg.tab, wall)
         entries.extend(wall_entries)
     return entries

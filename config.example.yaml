@@ -1,29 +1,39 @@
 # Copy to config.yaml and fill in. Secrets go in environment variables, not here.
 sheet_id: "YOUR_GOOGLE_SHEET_ID"
 
+# Each wall maps one sheet tab to one website repo. The site renders csv_path
+# directly (no build step), so csv_header must match what its app.js expects.
 walls:
   pets:
-    tab: "Pet Tribute Wall"      # exact tab name in the Google Sheet
+    tab: "Pet"
+    repo: "your-org/Pet-Wall"
+    branch: "main"
+    csv_path: "Tribute.csv"
+    csv_header: "In Honor/Memory Of:,Tribute Name,Donor Name,Image URL"
+    columns:
+      tribute_type: "In Honor/Memory Of:"   # this tab's header differs from People's
   people:
-    tab: "People Tribute Wall"
+    tab: "People"
+    repo: "your-org/Tribute-Wall"
+    branch: "main"
+    csv_path: "Tribute.csv"
+    csv_header: "In Honor or Memory Of:,Tribute Name,Donor Name,Image URL"
 
 # Map pipeline fields to the exact header text in row 1 of each tab.
-# tribute_name and donor_name are required; the others are optional.
+# tribute_name and donor_name are required; per-wall `columns` override these.
 columns:
+  tribute_type: "In Honor or Memory Of:"
   tribute_name: "Tribute Name"
   donor_name: "Donor Name"
-  message: "Message"
   image_url: "Image URL"
 
-website:
-  repo: "your-org/website"        # owner/name of the site's GitHub repo
-  branch: "main"
-  data_dir: "data/tributes"       # where pets.json / people.json are written
-
+# Recipients are used by the Apps Script emailer (and the optional SMTP path).
 email:
-  sender: "tributeflow@example.org"
+  sender: "tributeflow@example.org"   # only used if SMTP secrets are set
   recipients:
-    - "marketing@example.org"
+    - "development@example.org"
+    - "comms@example.org"
 
 model: "claude-opus-4-8"
 state_path: "state/published.json"
+summary_path: "last_run_summary.json"   # committed back; polled by the Apps Script

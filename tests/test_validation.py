@@ -4,7 +4,8 @@ from tributeflow.validation import drive_file_id, normalize_image_url, validate_
 
 def make_entry(**overrides) -> Entry:
     defaults = dict(
-        wall="pets", row_number=5, tribute_name="Bella", donor_name="The Smith Family"
+        wall="pets", row_number=5, tribute_name="Bella", donor_name="The Smith Family",
+        tribute_type="In memory of",
     )
     defaults.update(overrides)
     return Entry(**defaults)
@@ -33,6 +34,22 @@ def test_missing_donor_name_flagged():
     issues = validate_entry(make_entry(donor_name=""), url_checker=url_ok)
     assert len(issues) == 1
     assert "donor name" in issues[0].problem
+
+
+def test_blank_tribute_type_flagged():
+    issues = validate_entry(make_entry(tribute_type=""), url_checker=url_ok)
+    assert len(issues) == 1
+    assert "first column is blank" in issues[0].problem
+
+
+def test_unrecognized_tribute_type_flagged():
+    issues = validate_entry(make_entry(tribute_type="Memory"), url_checker=url_ok)
+    assert len(issues) == 1
+    assert '"Memory"' in issues[0].problem
+
+
+def test_tribute_type_case_insensitive():
+    assert validate_entry(make_entry(tribute_type="in memory of"), url_checker=url_ok) == []
 
 
 def test_working_image_url_passes():
@@ -69,6 +86,24 @@ def test_drive_share_link_normalized_to_thumbnail():
 def test_existing_thumbnail_link_untouched():
     url = "https://drive.google.com/thumbnail?id=1AbC&sz=w400"
     assert normalize_image_url(url) == url
+
+
+def test_multiple_semicolon_separated_images_validated_individually():
+    entry = make_entry(
+        image_url="https://drive.google.com/thumbnail?id=1A ;\nhttps://drive.google.com/thumbnail?id=1B"
+    )
+    assert validate_entry(entry, url_checker=url_ok) == []
+    # whitespace/newlines cleaned up, both URLs kept
+    assert entry.image_url == (
+        "https://drive.google.com/thumbnail?id=1A;https://drive.google.com/thumbnail?id=1B"
+    )
+
+
+def test_one_broken_image_among_several_flagged():
+    entry = make_entry(image_url="https://example.com/ok.jpg;not-a-url")
+    issues = validate_entry(entry, url_checker=url_ok)
+    assert len(issues) == 1
+    assert "not-a-url" in issues[0].problem
 
 
 def test_validation_normalizes_drive_link_in_place():

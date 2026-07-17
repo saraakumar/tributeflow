@@ -51,7 +51,7 @@ def _entry(raw: dict) -> Entry:
         row_number=raw["row"],
         tribute_name=raw["tribute_name"],
         donor_name=raw.get("donor_name", ""),
-        message=raw.get("message", ""),
+        tribute_type=raw.get("tribute_type", ""),
         image_url=raw.get("image_url", ""),
     )
 

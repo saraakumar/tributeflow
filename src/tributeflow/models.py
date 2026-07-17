@@ -7,6 +7,16 @@ import json
 from dataclasses import asdict, dataclass, field
 
 
+def sanitize_csv_field(value: str) -> str:
+    """Make a field safe for the walls' naive comma-split CSV parser.
+
+    The site's app.js splits rows on "," with no quoting, and renders ";" as
+    ", " — so converting commas to semicolons keeps the display identical
+    while never breaking a row.
+    """
+    return value.replace(",", ";").replace("\n", " ").strip()
+
+
 @dataclass
 class Entry:
     """One row of the tribute sheet."""
@@ -15,7 +25,7 @@ class Entry:
     row_number: int  # 1-based row in the sheet tab (including header offset)
     tribute_name: str
     donor_name: str
-    message: str = ""
+    tribute_type: str = ""  # "In honor of" or "In memory of"
     image_url: str = ""
 
     @property
@@ -28,24 +38,19 @@ class Entry:
                 "wall": self.wall,
                 "tribute_name": self.tribute_name,
                 "donor_name": self.donor_name,
-                "message": self.message,
+                "tribute_type": self.tribute_type,
                 "image_url": self.image_url,
             },
             sort_keys=True,
         )
         return hashlib.sha256(payload.encode()).hexdigest()
 
-    def to_public_dict(self) -> dict:
-        """Shape written to the website data files."""
-        d = {
-            "tribute_name": self.tribute_name,
-            "donor_name": self.donor_name,
-        }
-        if self.message:
-            d["message"] = self.message
-        if self.image_url:
-            d["image_url"] = self.image_url
-        return d
+    def to_csv_row(self) -> str:
+        """One row of the wall's Tribute.csv: type, tribute, donor, image."""
+        return ",".join(
+            sanitize_csv_field(v)
+            for v in (self.tribute_type, self.tribute_name, self.donor_name, self.image_url)
+        )
 
 
 @dataclass
@@ -68,6 +73,7 @@ class RunReport:
     published_changed: list[Entry] = field(default_factory=list)
     unchanged_count: int = 0
     issues: list[Issue] = field(default_factory=list)
+    consolidated: list[Issue] = field(default_factory=list)  # auto-merged duplicates, FYI only
     dry_run: bool = False
 
     def to_dict(self) -> dict:
@@ -76,5 +82,6 @@ class RunReport:
             "published_changed": [asdict(e) for e in self.published_changed],
             "unchanged_count": self.unchanged_count,
             "issues": [asdict(i) for i in self.issues],
+            "consolidated": [asdict(i) for i in self.consolidated],
             "dry_run": self.dry_run,
         }
